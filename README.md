@@ -111,7 +111,7 @@ uv run mcp install \
 >   "mcpServers": {
 >     "gmail": {
 >       "command": "~/.local/bin/uv", 
->       ...
+>       // ...remainder of config...
 >     }
 >   }
 > }
