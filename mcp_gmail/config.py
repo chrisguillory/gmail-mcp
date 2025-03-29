@@ -43,7 +43,6 @@ class Settings(BaseSettings):
     )
 
 
-@lru_cache()
 def get_settings(config_file: Optional[str] = None) -> Settings:
     """
     Get settings instance, optionally loaded from a config file.
@@ -55,14 +54,13 @@ def get_settings(config_file: Optional[str] = None) -> Settings:
     Returns:
         Settings instance
     """
-    # Start with environment variables
-    settings = Settings()
+    if config_file is None:
+        return Settings()
 
     # Override with config file if provided
     if config_file and os.path.exists(config_file):
         with open(config_file, "r") as f:
             file_config = json.load(f)
-            # Update settings with values from config file
             settings = Settings.model_validate(file_config)
 
     return settings
