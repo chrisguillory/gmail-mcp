@@ -15,7 +15,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python and UV
       uses: astral-sh/setup-uv@v5
       with:
@@ -23,15 +23,15 @@ jobs:
         version: "0.6.10"  # Pin to a specific uv version
         enable-cache: true  # Enable built-in caching
         cache-dependency-glob: "pyproject.toml"  # Invalidate cache when requirements change
-      
+
     - name: Install dependencies
       run: uv sync
-      
+
     - name: Lint with ruff
       run: uv run ruff check .
-      
+
     - name: Format check with ruff
       run: uv run ruff format --check .
-      
+
     - name: Test with pytest
       run: uv run pytest tests/

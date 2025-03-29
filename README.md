@@ -33,13 +33,13 @@ There's unfortunately a lot of steps required to use the Gmail API. I've attempt
 1. **Create a Google Cloud Project**
     - Go to [Google Cloud Console](https://console.cloud.google.com/)
     - Click on the project dropdown at the top of the page
-    - Click "New Project" 
+    - Click "New Project"
     - Enter a project name (e.g., "MCP Gmail Integration")
     - Click "Create"
     - Wait for the project to be created and select it from the dropdown
 
 2. **Enable the Gmail API**
-    - In your Google Cloud project, go to the navigation menu (≡) 
+    - In your Google Cloud project, go to the navigation menu (≡)
     - Select "APIs & Services" > "Library"
     - Search for "Gmail API"
     - Click on the Gmail API card
@@ -104,13 +104,13 @@ uv run mcp install \
 
 > [!NOTE]
 > If you encounter an error like `Error: spawn uv ENOENT` when spinning up Claude Desktop and initializing the MCP server, you may need to update your `claude_desktop_config.json` to provide the **absolute** path to `uv`. Go to Claude Desktop -> Settings -> Developer -> Edit Config.
-> 
+>
 > ```json
 > {
 >   "globalShortcut": "Ctrl+Space",
 >   "mcpServers": {
 >     "gmail": {
->       "command": "~/.local/bin/uv", 
+>       "command": "~/.local/bin/uv",
 >       // ...remainder of config...
 >     }
 >   }
@@ -118,6 +118,8 @@ uv run mcp install \
 > ```
 
 ## Development
+
+### Linting and Testing
 
 Run linting and formatting:
 ```bash
@@ -129,6 +131,20 @@ uv run ruff check --fix .
 
 # Run tests
 uv run pytest tests/
+```
+
+### Pre-commit Hooks
+
+This project uses pre-commit hooks to ensure code quality. The hooks automatically run before each commit to verify code formatting and linting standards.
+
+Setup pre-commit:
+```bash
+pre-commit install
+```
+
+Run pre-commit manually on all files:
+```bash
+pre-commit run --all-files
 ```
 
 ## Usage
@@ -156,11 +172,11 @@ Once running, you can connect to the MCP server using any MCP client or via Clau
 You can configure the server using environment variables:
 
 - `MCP_GMAIL_CREDENTIALS_PATH`: Path to the OAuth credentials JSON file (default: "credentials.json")
-- `MCP_GMAIL_TOKEN_PATH`: Path to store the OAuth token (default: "token.json") 
+- `MCP_GMAIL_TOKEN_PATH`: Path to store the OAuth token (default: "token.json")
 - `MCP_GMAIL_PORT`: Port to run the server on (default: 8080)
 - `MCP_GMAIL_DEBUG`: Enable debug mode (default: false)
 - `MCP_GMAIL_MAX_RESULTS`: Default maximum results for search queries (default: 10)
 
 ## License
 
-MIT 
+MIT
