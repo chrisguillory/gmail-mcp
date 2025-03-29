@@ -107,11 +107,9 @@ uv run mcp install \
 >
 > ```json
 > {
->   "globalShortcut": "Ctrl+Space",
 >   "mcpServers": {
 >     "gmail": {
 >       "command": "~/.local/bin/uv",
->       // ...remainder of config...
 >     }
 >   }
 > }
