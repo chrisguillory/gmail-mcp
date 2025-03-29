@@ -417,3 +417,46 @@ ID: {message_id}
 Subject: {subject}
 Removed Label: {label_name} ({label_id})
 """
+
+
+@mcp.tool()
+def get_emails(message_ids: list[str]) -> str:
+    """
+    Get the content of multiple email messages by their IDs.
+
+    Args:
+        message_ids: A list of Gmail message IDs
+
+    Returns:
+        The formatted content of all requested emails
+    """
+    if not message_ids:
+        return "No message IDs provided."
+
+    # Fetch all emails first
+    retrieved_emails = []
+    error_emails = []
+
+    for msg_id in message_ids:
+        try:
+            message = get_message(service, msg_id, user_id=settings.user_id)
+            retrieved_emails.append((msg_id, message))
+        except Exception as e:
+            error_emails.append((msg_id, str(e)))
+
+    # Build result string after fetching all emails
+    result = f"Retrieved {len(retrieved_emails)} emails:\n"
+
+    # Format all successfully retrieved emails
+    for i, (msg_id, message) in enumerate(retrieved_emails, 1):
+        result += f"\n--- Email {i} (ID: {msg_id}) ---\n"
+        result += format_message(message)
+
+    # Report any errors
+    if error_emails:
+        result += f"\n\nFailed to retrieve {len(error_emails)} emails:\n"
+        for i, (msg_id, error) in enumerate(error_emails, 1):
+            result += f"\n--- Email {i} (ID: {msg_id}) ---\n"
+            result += f"Error: {error}\n"
+
+    return result

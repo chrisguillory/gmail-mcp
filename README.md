@@ -160,6 +160,7 @@ Once running, you can connect to the MCP server using any MCP client or via Clau
 - `send_email` - Send an email
 - `search_emails` - Search for emails with specific filters (from, to, subject, dates, etc.)
 - `query_emails` - Search for emails using raw Gmail query syntax
+- `get_emails` - Retrieve multiple email messages by their IDs
 - `list_available_labels` - Get all available Gmail labels
 - `mark_message_read` - Mark a message as read
 - `add_label_to_message` - Add a label to a message
