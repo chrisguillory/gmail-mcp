@@ -18,9 +18,8 @@ A Model Context Protocol (MCP) server that provides Gmail access for LLMs, power
 
 ### 1. Install dependencies
 
-With uv (recommended):
+Install project dependencies (uv automatically creates and manages a virtual environment)
 ```bash
-# Install project dependencies (uv automatically creates and manages a virtual environment)
 uv sync
 ```
 
@@ -87,12 +86,14 @@ You should be able to see usage metrics at https://console.cloud.google.com/apis
 
 ### 3. Run the server
 
-Development mode with uv (recommended):
+Development mode:
 ```bash
 uv run mcp dev mcp_gmail/server.py
 ```
 
-Or with Claude Desktop:
+This will spin up an MCP Inspector application that you can use to interact with the MCP server.
+
+Or install for use with Claude Desktop:
 ```bash
 uv run mcp install \
     --with-editable .
@@ -135,7 +136,7 @@ uv run pytest tests/
 
 This project uses pre-commit hooks to ensure code quality. The hooks automatically run before each commit to verify code formatting and linting standards.
 
-Setup pre-commit:
+Install the pre-commit hooks:
 ```bash
 pre-commit install
 ```
@@ -172,8 +173,6 @@ You can configure the server using environment variables:
 
 - `MCP_GMAIL_CREDENTIALS_PATH`: Path to the OAuth credentials JSON file (default: "credentials.json")
 - `MCP_GMAIL_TOKEN_PATH`: Path to store the OAuth token (default: "token.json")
-- `MCP_GMAIL_PORT`: Port to run the server on (default: 8080)
-- `MCP_GMAIL_DEBUG`: Enable debug mode (default: false)
 - `MCP_GMAIL_MAX_RESULTS`: Default maximum results for search queries (default: 10)
 
 ## License

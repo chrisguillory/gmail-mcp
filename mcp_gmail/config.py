@@ -27,9 +27,7 @@ class Settings(BaseSettings):
     credentials_path: str = DEFAULT_CREDENTIALS_PATH
     token_path: str = DEFAULT_TOKEN_PATH
     scopes: List[str] = GMAIL_SCOPES
-    port: int = 8080
     user_id: str = DEFAULT_USER_ID
-    debug: bool = False
     max_results: int = 10
 
     # Configure environment variable settings

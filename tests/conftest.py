@@ -24,8 +24,6 @@ def temp_config_file() -> Generator[str, None, None]:
         config_data = {
             "credentials_path": "test_creds.json",
             "token_path": "test_token.json",
-            "port": 9999,
-            "debug": True,
             "max_results": 20,
         }
         temp_file.write(json.dumps(config_data).encode("utf-8"))

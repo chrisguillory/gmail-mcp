@@ -15,8 +15,6 @@ def test_settings_from_file(tmp_path):
     config_data = {
         "credentials_path": "custom_creds.json",
         "token_path": "custom_token.json",
-        "port": 9000,
-        "debug": True,
         "max_results": 20,
     }
     config_file.write_text(json.dumps(config_data))
@@ -27,8 +25,6 @@ def test_settings_from_file(tmp_path):
     # Check that values from file were loaded
     assert settings.credentials_path == "custom_creds.json"
     assert settings.token_path == "custom_token.json"
-    assert settings.port == 9000
-    assert settings.debug is True
     assert settings.max_results == 20
 
     # Check that default values are still present for unspecified fields
@@ -40,15 +36,11 @@ def test_environment_variables():
     """Test that environment variables override defaults."""
     env_vars = {
         "MCP_GMAIL_CREDENTIALS_PATH": "env_creds.json",
-        "MCP_GMAIL_PORT": "7000",
-        "MCP_GMAIL_DEBUG": "true",
         "MCP_GMAIL_MAX_RESULTS": "50",
     }
     with patch.dict("os.environ", env_vars, clear=True):
         settings = get_settings()
         assert settings.credentials_path == "env_creds.json"
-        assert settings.port == 7000
-        assert settings.debug is True
         assert settings.max_results == 50
 
 
@@ -58,14 +50,10 @@ def test_settings_direct_use():
     settings = Settings(
         credentials_path="direct_creds.json",
         token_path="direct_token.json",
-        port=5000,
-        debug=True,
         max_results=30,
     )
 
     # Validate model fields
     assert settings.credentials_path == "direct_creds.json"
     assert settings.token_path == "direct_token.json"
-    assert settings.port == 5000
-    assert settings.debug is True
     assert settings.max_results == 30
