@@ -44,3 +44,5 @@ env/
 # OS specific files
 .DS_Store
 Thumbs.db
+
+.specstory

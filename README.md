@@ -96,7 +96,7 @@ This will spin up an MCP Inspector application that you can use to interact with
 Or install for use with Claude Desktop:
 ```bash
 uv run mcp install \
-    --with-editable .
+    --with-editable . \
     --name gmail \
     --env-var MCP_GMAIL_CREDENTIALS_PATH=$(pwd)/credentials.json \
     --env-var MCP_GMAIL_TOKEN_PATH=$(pwd)/token.json \

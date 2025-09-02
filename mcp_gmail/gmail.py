@@ -292,7 +292,7 @@ def search_messages(
     service: GmailService,
     user_id: str = DEFAULT_USER_ID,
     max_results: int = 10,
-    is_unread: Optional[bool] = None,
+    read_status: Optional[str] = None,
     labels: Optional[List[str]] = None,
     from_email: Optional[str] = None,
     to_email: Optional[str] = None,
@@ -311,7 +311,7 @@ def search_messages(
         service: Gmail API service instance
         user_id: Gmail user ID (default: 'me')
         max_results: Maximum number of messages to return (default: 10)
-        is_unread: If True, only return unread messages (optional)
+        read_status: Filter by read status - "read", "unread", or None for all (optional)
         labels: List of label names to search for (optional)
         from_email: Sender email address (optional)
         to_email: Recipient email address (optional)
@@ -329,8 +329,11 @@ def search_messages(
     query_parts = []
 
     # Handle read/unread status
-    if is_unread is not None:
-        query_parts.append("is:unread" if is_unread else "")
+    if read_status is not None:
+        if read_status == "read":
+            query_parts.append("is:read")
+        elif read_status == "unread":
+            query_parts.append("is:unread")
 
     # Handle labels
     if labels:

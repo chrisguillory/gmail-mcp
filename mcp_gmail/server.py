@@ -198,10 +198,11 @@ def search_emails(
     to_email: Optional[str] = None,
     subject: Optional[str] = None,
     has_attachment: bool = False,
-    is_unread: bool = False,
+    read_status: Optional[str] = None,
     after_date: Optional[str] = None,
     before_date: Optional[str] = None,
     label: Optional[str] = None,
+    gmail_query: Optional[str] = None,
     max_results: int = 10,
 ) -> str:
     """
@@ -212,14 +213,18 @@ def search_emails(
         to_email: Filter by recipient email
         subject: Filter by subject text
         has_attachment: Filter for emails with attachments
-        is_unread: Filter for unread emails
+        read_status: Filter by read status - "read", "unread", or None for all
         after_date: Filter for emails after this date (format: YYYY/MM/DD)
         before_date: Filter for emails before this date (format: YYYY/MM/DD)
         label: Filter by Gmail label
+        gmail_query: Raw Gmail search query (e.g., "is:read from:github.com subject:PR")
         max_results: Maximum number of results to return
 
     Returns:
         Formatted list of matching emails
+        
+    Note: Use either explicit parameters OR gmail_query, not both. 
+    If gmail_query is provided, all other parameters are ignored.
     """
     # Validate date formats
     if after_date and not validate_date_format(after_date):
@@ -228,7 +233,53 @@ def search_emails(
     if before_date and not validate_date_format(before_date):
         return f"Error: before_date '{before_date}' is not in the required format YYYY/MM/DD"
 
-    # Use search_messages to find matching emails
+    # Use either explicit parameters OR raw Gmail query (not both)
+    if gmail_query:
+        # Check if any explicit parameters are provided and warn the user
+        explicit_params = [
+            from_email, to_email, subject, has_attachment, read_status, 
+            after_date, before_date, label
+        ]
+        if any(param is not None and param != False for param in explicit_params):
+            return f"""Error: Cannot use both explicit parameters and gmail_query together.
+            
+You provided gmail_query: "{gmail_query}"
+But also provided explicit parameters that will be ignored:
+{'- from_email: ' + from_email if from_email else ''}
+{'- to_email: ' + to_email if to_email else ''}
+{'- subject: ' + subject if subject else ''}
+{'- has_attachment: ' + str(has_attachment) if has_attachment else ''}
+{'- read_status: ' + read_status if read_status else ''}
+{'- after_date: ' + after_date if after_date else ''}
+{'- before_date: ' + before_date if before_date else ''}
+{'- label: ' + label if label else ''}
+
+Please use either explicit parameters OR gmail_query, not both."""
+        
+        # Use raw Gmail query directly
+        messages = list_messages(
+            service, user_id=settings.user_id, max_results=max_results, query=gmail_query
+        )
+        # Early return for gmail_query path
+        result = f"Found {len(messages)} messages matching criteria:\n"
+
+        for msg_info in messages:
+            msg_id = msg_info.get("id")
+            message = get_message(service, msg_id, user_id=settings.user_id)
+            headers = get_headers_dict(message)
+
+            from_header = headers.get("From", "Unknown")
+            subject = headers.get("Subject", "No Subject")
+            date = headers.get("Date", "Unknown Date")
+
+            result += f"\nMessage ID: {msg_id}\n"
+            result += f"From: {from_header}\n"
+            result += f"Subject: {subject}\n"
+            result += f"Date: {date}\n"
+
+        return result
+
+    # Use explicit parameters with search_messages
     messages = search_messages(
         service,
         user_id=settings.user_id,
@@ -236,7 +287,7 @@ def search_emails(
         to_email=to_email,
         subject=subject,
         has_attachment=has_attachment,
-        is_unread=is_unread,
+        read_status=read_status,
         after=after_date,
         before=before_date,
         labels=[label] if label else None,
@@ -460,3 +511,10 @@ def get_emails(message_ids: list[str]) -> str:
             result += f"Error: {error}\n"
 
     return result
+
+
+if __name__ == "__main__":
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+    print("Starting Gmail MCP Server...")
+    mcp.run(transport="stdio")
