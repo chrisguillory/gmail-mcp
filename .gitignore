@@ -4,6 +4,7 @@ token.json
 *.key
 *.pem
 *.env
+.envrc-personal
 
 # Python artifacts
 __pycache__/

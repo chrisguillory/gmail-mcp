@@ -1,0 +1,46 @@
+# Docker Compose for local development with live code mounting and logging
+# This uses your local code directly without rebuilding the Docker image
+version: '3.8'
+
+services:
+  gmail-mcp-local:
+    image: ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+    container_name: gmail-mcp-local
+    working_dir: /app
+    command: uv run python -m mcp_gmail.server
+    volumes:
+      # Mount entire project directory
+      - .:/app
+      # Mount uv cache for faster runs
+      - uv-cache:/root/.cache/uv
+    environment:
+      # Pass through Gmail configuration from host environment
+      MCP_GMAIL_CREDENTIALS_PATH: ${MCP_GMAIL_CREDENTIALS_PATH:-./credentials.json}
+      MCP_GMAIL_TOKEN_PATH: ${MCP_GMAIL_TOKEN_PATH:-./token.json}
+      MCP_GMAIL_USER_ID: ${MCP_GMAIL_USER_ID:-me}
+      MCP_GMAIL_MAX_RESULTS: ${MCP_GMAIL_MAX_RESULTS:-10}
+      # Logging
+      MCP_GMAIL_LOG_LEVEL: ${MCP_GMAIL_LOG_LEVEL:-info}
+      # Python environment
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    stdin_open: true
+    tty: true
+    # Ensure clean shutdown
+    stop_signal: SIGTERM
+    stop_grace_period: 10s
+    # Restart policy for development
+    restart: "no"
+    # Resource limits (optional, adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+volumes:
+  uv-cache:
+    name: gmail-mcp-uv-cache
