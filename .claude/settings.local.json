@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Read(/Users/chris/slack-mcp-server/**)",
+      "Read(/Users/chris/slack-mcp-server/**)",
+      "Read(/Users/chris/slack-mcp-server/pkg/handler/**)",
+      "Read(/Users/chris/slack-mcp-server/pkg/handler/**)",
+      "Bash(uv run ruff:*)"
     ],
     "deny": [],
     "ask": []
