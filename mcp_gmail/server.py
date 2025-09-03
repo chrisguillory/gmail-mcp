@@ -9,7 +9,8 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from mcp.server.fastmcp import FastMCP, ToolError
+from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.exceptions import ToolError
 from pydantic import Field
 
 from mcp_gmail.config import settings
