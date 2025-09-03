@@ -8,10 +8,8 @@
 - [ ] Thread-based search and operations
 
 ### 2. Advanced Email State Management
-- [ ] Star/unstar emails
-- [ ] Archive/unarchive functionality
-- [ ] Delete/trash/untrash operations
-- [ ] Mark as unread (currently only have mark as read)
+- [ ] Star/unstar emails (can use add/remove STARRED label)
+- [ ] Delete/trash/untrash operations (can use add/remove TRASH label)
 
 ### 3. Draft Lifecycle
 - [ ] Get/retrieve existing drafts
@@ -75,18 +73,6 @@
 - Batch operations need careful API quota management
 - Push notifications require Google Cloud Pub/Sub setup
 - Attachment handling needs security considerations (malware scanning, size limits)
-
-### Current Implementation Status:
-✅ Completed features:
-- compose_email - Create email drafts
-- send_email - Send emails directly
-- search_emails - Search with structured filters
-- query_emails - Search using raw Gmail query syntax
-- get_emails - Retrieve multiple emails by ID
-- list_available_labels - Get all Gmail labels
-- mark_message_read - Mark messages as read
-- add_label_to_message - Add labels to messages
-- remove_label_from_message - Remove labels from messages
 
 ---
 *Last updated: 2025-09-02*

@@ -15,20 +15,20 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
 
 # Default settings
-DEFAULT_CREDENTIALS_PATH = "credentials.json"
-DEFAULT_TOKEN_PATH = "token.json"
-DEFAULT_USER_ID = "me"
+DEFAULT_CREDENTIALS_PATH = 'credentials.json'
+DEFAULT_TOKEN_PATH = 'token.json'
+DEFAULT_USER_ID = 'me'
 
 # Gmail API scopes
 GMAIL_SCOPES = [
-    "https://www.googleapis.com/auth/gmail.readonly",
-    "https://www.googleapis.com/auth/gmail.send",
-    "https://www.googleapis.com/auth/gmail.compose",
-    "https://www.googleapis.com/auth/gmail.labels",
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/gmail.compose',
+    'https://www.googleapis.com/auth/gmail.labels',
 ]
 
 # For simpler testing
-GMAIL_MODIFY_SCOPE = ["https://www.googleapis.com/auth/gmail.modify"]
+GMAIL_MODIFY_SCOPE = ['https://www.googleapis.com/auth/gmail.modify']
 
 # Type alias for the Gmail service
 GmailService = Resource
@@ -54,7 +54,7 @@ def get_gmail_service(
 
     # Look for token file with stored credentials
     if os.path.exists(token_path):
-        with open(token_path, "r") as token:
+        with open(token_path, 'r') as token:
             token_data = json.load(token)
             creds = Credentials.from_authorized_user_info(token_data)
 
@@ -66,8 +66,8 @@ def get_gmail_service(
             # Check if credentials file exists
             if not os.path.exists(credentials_path):
                 raise FileNotFoundError(
-                    f"Credentials file not found at {credentials_path}. "
-                    "Please download your OAuth credentials from Google Cloud Console."
+                    f'Credentials file not found at {credentials_path}. '
+                    'Please download your OAuth credentials from Google Cloud Console.'
                 )
 
             flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes)
@@ -75,11 +75,11 @@ def get_gmail_service(
 
         # Save credentials for future runs
         token_json = json.loads(creds.to_json())
-        with open(token_path, "w") as token:
+        with open(token_path, 'w') as token:
             json.dump(token_json, token)
 
     # Build the Gmail service
-    return build("gmail", "v1", credentials=creds)
+    return build('gmail', 'v1', credentials=creds)
 
 
 def create_message(
@@ -105,19 +105,19 @@ def create_message(
         A dictionary containing a base64url encoded email object
     """
     message = MIMEText(message_text)
-    message["to"] = to
-    message["from"] = sender
-    message["subject"] = subject
+    message['to'] = to
+    message['from'] = sender
+    message['subject'] = subject
 
     if cc:
-        message["cc"] = cc
+        message['cc'] = cc
     if bcc:
-        message["bcc"] = bcc
+        message['bcc'] = bcc
 
     # Encode the message
     encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
 
-    return {"raw": encoded_message}
+    return {'raw': encoded_message}
 
 
 def create_multipart_message(
@@ -144,29 +144,29 @@ def create_multipart_message(
     Returns:
         A dictionary containing a base64url encoded email object
     """
-    message = MIMEMultipart("alternative")
-    message["to"] = to
-    message["from"] = sender
-    message["subject"] = subject
+    message = MIMEMultipart('alternative')
+    message['to'] = to
+    message['from'] = sender
+    message['subject'] = subject
 
     if cc:
-        message["cc"] = cc
+        message['cc'] = cc
     if bcc:
-        message["bcc"] = bcc
+        message['bcc'] = bcc
 
     # Attach text part
-    text_mime = MIMEText(text_part, "plain")
+    text_mime = MIMEText(text_part, 'plain')
     message.attach(text_mime)
 
     # Attach HTML part if provided
     if html_part:
-        html_mime = MIMEText(html_part, "html")
+        html_mime = MIMEText(html_part, 'html')
         message.attach(html_mime)
 
     # Encode the message
     encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
 
-    return {"raw": encoded_message}
+    return {'raw': encoded_message}
 
 
 def parse_message_body(message: Dict[str, Any]) -> str:
@@ -182,24 +182,24 @@ def parse_message_body(message: Dict[str, Any]) -> str:
 
     # Helper function to find text/plain parts
     def get_text_part(parts):
-        text = ""
+        text = ''
         for part in parts:
-            if part["mimeType"] == "text/plain":
-                if "data" in part["body"]:
-                    text += base64.urlsafe_b64decode(part["body"]["data"]).decode()
-            elif "parts" in part:
-                text += get_text_part(part["parts"])
+            if part['mimeType'] == 'text/plain':
+                if 'data' in part['body']:
+                    text += base64.urlsafe_b64decode(part['body']['data']).decode()
+            elif 'parts' in part:
+                text += get_text_part(part['parts'])
         return text
 
     # Check if the message is multipart
-    if "parts" in message["payload"]:
-        return get_text_part(message["payload"]["parts"])
+    if 'parts' in message['payload']:
+        return get_text_part(message['payload']['parts'])
     else:
         # Handle single part messages
-        if "data" in message["payload"]["body"]:
-            data = message["payload"]["body"]["data"]
+        if 'data' in message['payload']['body']:
+            data = message['payload']['body']['data']
             return base64.urlsafe_b64decode(data).decode()
-        return ""
+        return ''
 
 
 def get_headers_dict(message: Dict[str, Any]) -> Dict[str, str]:
@@ -213,8 +213,8 @@ def get_headers_dict(message: Dict[str, Any]) -> Dict[str, str]:
         Dictionary of message headers
     """
     headers = {}
-    for header in message["payload"]["headers"]:
-        headers[header["name"]] = header["value"]
+    for header in message['payload']['headers']:
+        headers[header['name']] = header['value']
     return headers
 
 
@@ -260,7 +260,7 @@ def get_labels(service: GmailService, user_id: str = DEFAULT_USER_ID) -> List[Di
         List of label objects
     """
     response = service.users().labels().list(userId=user_id).execute()
-    return response.get("labels", [])
+    return response.get('labels', [])
 
 
 def list_messages(
@@ -282,9 +282,9 @@ def list_messages(
         List of message objects
     """
     response = (
-        service.users().messages().list(userId=user_id, maxResults=max_results, q=query or "").execute()
+        service.users().messages().list(userId=user_id, maxResults=max_results, q=query or '').execute()
     )
-    messages = response.get("messages", [])
+    messages = response.get('messages', [])
     return messages
 
 
@@ -330,48 +330,48 @@ def search_messages(
 
     # Handle read/unread status
     if read_status is not None:
-        if read_status == "read":
-            query_parts.append("is:read")
-        elif read_status == "unread":
-            query_parts.append("is:unread")
+        if read_status == 'read':
+            query_parts.append('is:read')
+        elif read_status == 'unread':
+            query_parts.append('is:unread')
 
     # Handle labels
     if labels:
         for label in labels:
-            query_parts.append(f"label:{label}")
+            query_parts.append(f'label:{label}')
 
     # Handle from and to
     if from_email:
-        query_parts.append(f"from:{from_email}")
+        query_parts.append(f'from:{from_email}')
     if to_email:
-        query_parts.append(f"to:{to_email}")
+        query_parts.append(f'to:{to_email}')
 
     # Handle subject
     if subject:
-        query_parts.append(f"subject:{subject}")
+        query_parts.append(f'subject:{subject}')
 
     # Handle date filters
     if after:
-        query_parts.append(f"after:{after}")
+        query_parts.append(f'after:{after}')
     if before:
-        query_parts.append(f"before:{before}")
+        query_parts.append(f'before:{before}')
 
     # Handle attachment filter
     if has_attachment is not None and has_attachment:
-        query_parts.append("has:attachment")
+        query_parts.append('has:attachment')
 
     # Handle starred and important flags
     if is_starred is not None and is_starred:
-        query_parts.append("is:starred")
+        query_parts.append('is:starred')
     if is_important is not None and is_important:
-        query_parts.append("is:important")
+        query_parts.append('is:important')
 
     # Handle trash
     if in_trash is not None and in_trash:
-        query_parts.append("in:trash")
+        query_parts.append('in:trash')
 
     # Join all query parts with spaces
-    query = " ".join(query_parts)
+    query = ' '.join(query_parts)
 
     # Use the existing list_messages function to perform the search
     return list_messages(service, user_id, max_results, query)
@@ -436,7 +436,7 @@ def create_draft(
         Draft object
     """
     message = create_message(sender, to, subject, body, cc, bcc)
-    draft_body = {"message": message}
+    draft_body = {'message': message}
     return service.users().drafts().create(userId=user_id, body=draft_body).execute()
 
 
@@ -455,7 +455,7 @@ def list_drafts(
         List of draft objects
     """
     response = service.users().drafts().list(userId=user_id, maxResults=max_results).execute()
-    drafts = response.get("drafts", [])
+    drafts = response.get('drafts', [])
     return drafts
 
 
@@ -487,12 +487,12 @@ def send_draft(service: GmailService, draft_id: str, user_id: str = DEFAULT_USER
     Returns:
         Sent message object
     """
-    draft = {"id": draft_id}
+    draft = {'id': draft_id}
     return service.users().drafts().send(userId=user_id, body=draft).execute()
 
 
 def create_label(
-    service: GmailService, name: str, user_id: str = DEFAULT_USER_ID, label_type: str = "user"
+    service: GmailService, name: str, user_id: str = DEFAULT_USER_ID, label_type: str = 'user'
 ) -> Dict[str, Any]:
     """
     Create a new label.
@@ -507,10 +507,10 @@ def create_label(
         Created label object
     """
     label_body = {
-        "name": name,
-        "labelListVisibility": "labelShow",
-        "messageListVisibility": "show",
-        "type": label_type,
+        'name': name,
+        'labelListVisibility': 'labelShow',
+        'messageListVisibility': 'show',
+        'type': label_type,
     }
     return service.users().labels().create(userId=user_id, body=label_body).execute()
 
@@ -542,11 +542,11 @@ def update_label(
 
     # Update fields if provided
     if name:
-        label["name"] = name
+        label['name'] = name
     if label_list_visibility:
-        label["labelListVisibility"] = label_list_visibility
+        label['labelListVisibility'] = label_list_visibility
     if message_list_visibility:
-        label["messageListVisibility"] = message_list_visibility
+        label['messageListVisibility'] = message_list_visibility
 
     return service.users().labels().update(userId=user_id, id=label_id, body=label).execute()
 
@@ -586,7 +586,7 @@ def modify_message_labels(
     Returns:
         Updated message object
     """
-    body = {"addLabelIds": add_labels or [], "removeLabelIds": remove_labels or []}
+    body = {'addLabelIds': add_labels or [], 'removeLabelIds': remove_labels or []}
     return service.users().messages().modify(userId=user_id, id=message_id, body=body).execute()
 
 
@@ -610,7 +610,7 @@ def batch_modify_messages_labels(
     Returns:
         None
     """
-    body = {"ids": message_ids, "addLabelIds": add_labels or [], "removeLabelIds": remove_labels or []}
+    body = {'ids': message_ids, 'addLabelIds': add_labels or [], 'removeLabelIds': remove_labels or []}
     service.users().messages().batchModify(userId=user_id, body=body).execute()
 
 

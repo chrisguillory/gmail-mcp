@@ -20,13 +20,13 @@ def temp_config_file() -> Generator[str, None, None]:
     Returns:
         Path to the temporary config file
     """
-    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as temp_file:
         config_data = {
-            "credentials_path": "test_creds.json",
-            "token_path": "test_token.json",
-            "max_results": 20,
+            'credentials_path': 'test_creds.json',
+            'token_path': 'test_token.json',
+            'max_results': 20,
         }
-        temp_file.write(json.dumps(config_data).encode("utf-8"))
+        temp_file.write(json.dumps(config_data).encode('utf-8'))
         temp_path = temp_file.name
 
     yield temp_path

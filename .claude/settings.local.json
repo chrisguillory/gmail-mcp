@@ -6,7 +6,17 @@
       "Read(/Users/chris/slack-mcp-server/**)",
       "Read(/Users/chris/slack-mcp-server/pkg/handler/**)",
       "Read(/Users/chris/slack-mcp-server/pkg/handler/**)",
-      "Bash(uv run ruff:*)"
+      "Bash(uv run ruff:*)",
+      "Read(/Users/chris/slack-mcp-server/**)",
+      "Read(/Users/chris/slack-mcp-server/**)",
+      "Read(/Users/chris/slack-mcp-server/**)",
+      "Read(/Users/chris/slack-mcp-server/cmd/slack-mcp-server/**)",
+      "Read(/Users/chris/slack-mcp-server/pkg/**)",
+      "Read(/Users/chris/slack-mcp-server/pkg/server/**)",
+      "Read(/Users/chris/slack-mcp-server/pkg/handler/**)",
+      "Read(/Users/chris/slack-mcp-server/pkg/handler/**)",
+      "Read(/Users/chris/slack-mcp-server/pkg/**)",
+      "Read(/Users/chris/slack-mcp-server/pkg/handler/**)"
     ],
     "deny": [],
     "ask": []

@@ -32,10 +32,10 @@ class Settings(BaseSettings):
 
     # Configure environment variable settings
     model_config = SettingsConfigDict(
-        env_prefix="MCP_GMAIL_",
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
+        env_prefix='MCP_GMAIL_',
+        env_file='.env',
+        env_file_encoding='utf-8',
+        extra='ignore',
         case_sensitive=False,
     )
 
@@ -56,7 +56,7 @@ def get_settings(config_file: Optional[str] = None) -> Settings:
 
     # Override with config file if provided
     if config_file and os.path.exists(config_file):
-        with open(config_file, "r") as f:
+        with open(config_file, 'r') as f:
             file_config = json.load(f)
             settings = Settings.model_validate(file_config)
 

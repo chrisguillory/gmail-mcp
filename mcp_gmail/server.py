@@ -9,7 +9,7 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, ToolError
 from pydantic import Field
 
 from mcp_gmail.config import settings
@@ -264,7 +264,7 @@ def get_email_thread(thread_id: str) -> str:
 
 # Tools
 @mcp.tool()
-def compose_email(
+def create_draft(
     to: str = Field(..., description='Recipient email address'),
     subject: str = Field(..., description='Email subject line'),
     body: str = Field(..., description='Email body content (plain text or HTML)'),
@@ -274,7 +274,7 @@ def compose_email(
     ),
 ) -> str:
     """
-    Compose a new email draft.
+    Create a new email draft.
 
     Args:
         to: Recipient email address
@@ -394,10 +394,10 @@ def search_emails(
     """
     # Validate date formats
     if after_date and not validate_date_format(after_date):
-        return f"Error: after_date '{after_date}' is not in the required format YYYY/MM/DD"
+        raise ToolError(f"after_date '{after_date}' is not in the required format YYYY/MM/DD")
 
     if before_date and not validate_date_format(before_date):
-        return f"Error: before_date '{before_date}' is not in the required format YYYY/MM/DD"
+        raise ToolError(f"before_date '{before_date}' is not in the required format YYYY/MM/DD")
 
     # Parse requested fields
     requested_fields = parse_message_fields(fields)
@@ -416,20 +416,32 @@ def search_emails(
             label,
         ]
         if any(param is not None and param is not False for param in explicit_params):
-            return f"""Error: Cannot use both explicit parameters and gmail_query together.
+            params_used = []
+            if from_email:
+                params_used.append(f'- from_email: {from_email}')
+            if to_email:
+                params_used.append(f'- to_email: {to_email}')
+            if subject:
+                params_used.append(f'- subject: {subject}')
+            if has_attachment:
+                params_used.append(f'- has_attachment: {has_attachment}')
+            if read_status:
+                params_used.append(f'- read_status: {read_status}')
+            if after_date:
+                params_used.append(f'- after_date: {after_date}')
+            if before_date:
+                params_used.append(f'- before_date: {before_date}')
+            if label:
+                params_used.append(f'- label: {label}')
+
+            error_msg = f"""Cannot use both explicit parameters and gmail_query together.
             
 You provided gmail_query: "{gmail_query}"
 But also provided explicit parameters that will be ignored:
-{'- from_email: ' + from_email if from_email else ''}
-{'- to_email: ' + to_email if to_email else ''}
-{'- subject: ' + subject if subject else ''}
-{'- has_attachment: ' + str(has_attachment) if has_attachment else ''}
-{'- read_status: ' + read_status if read_status else ''}
-{'- after_date: ' + after_date if after_date else ''}
-{'- before_date: ' + before_date if before_date else ''}
-{'- label: ' + label if label else ''}
+{chr(10).join(params_used)}
 
 Please use either explicit parameters OR gmail_query, not both."""
+            raise ToolError(error_msg)
 
         # Use raw Gmail query directly
         messages = list_messages(
@@ -473,49 +485,9 @@ Please use either explicit parameters OR gmail_query, not both."""
 
 
 @mcp.tool()
-def query_emails(
-    query: str = Field(..., description='Gmail search query (same syntax as Gmail search box)'),
-    max_results: int = Field(10, description='Maximum number of results to return'),
-    fields: Optional[str] = Field(
-        None,
-        description='Comma-separated list of fields: id, thread_id, subject, from, to, date, body_preview, body, labels, has_attachments, web_url. Default: "id,subject,from,date". Use "all" for all fields.',
-    ),
-) -> str:
+def list_labels() -> str:
     """
-    Search for emails using a raw Gmail query string.
-
-    Args:
-        query: Gmail search query (same syntax as Gmail search box)
-        max_results: Maximum number of results to return
-        fields: Comma-separated list of fields to include in response.
-                Available: id, thread_id, subject, from, to, date, body_preview, body,
-                labels, has_attachments, web_url
-                Default: "id,subject,from,date" (minimal set for token efficiency)
-                Use "all" for all available fields
-
-    Returns:
-        Formatted list of matching emails with requested fields
-    """
-    # Parse requested fields
-    requested_fields = parse_message_fields(fields)
-
-    messages = list_messages(service, user_id=settings.user_id, max_results=max_results, query=query)
-
-    result = f'Found {len(messages)} messages matching query: "{query}"\n'
-
-    for msg_info in messages:
-        msg_id = msg_info.get('id')
-        message = get_message(service, msg_id, user_id=settings.user_id)
-
-        result += f'\n{format_message_with_fields(message, msg_id, requested_fields)}\n'
-
-    return result
-
-
-@mcp.tool()
-def list_available_labels() -> str:
-    """
-    Get all available Gmail labels for the user.
+    List all Gmail labels for the user.
 
     Returns:
         Formatted list of labels with their IDs
@@ -536,43 +508,23 @@ def list_available_labels() -> str:
 
 
 @mcp.tool()
-def mark_message_read(
-    message_id: str = Field(..., description='Gmail message ID to mark as read'),
-) -> str:
-    """
-    Mark a message as read by removing the UNREAD label.
-
-    Args:
-        message_id: The Gmail message ID to mark as read
-
-    Returns:
-        Confirmation message
-    """
-    # Remove the UNREAD label
-    result = modify_message_labels(
-        service, user_id=settings.user_id, message_id=message_id, remove_labels=['UNREAD'], add_labels=[]
-    )
-
-    # Get message details to show what was modified
-    headers = get_headers_dict(result)
-    subject = headers.get('Subject', 'No Subject')
-
-    return f"""
-Message marked as read:
-ID: {message_id}
-Subject: {subject}
-"""
-
-
-@mcp.tool()
-def add_label_to_message(
+def add_label(
     message_id: str = Field(..., description='Gmail message ID'),
     label_id: str = Field(
-        ..., description='Gmail label ID to add (use list_available_labels to find label IDs)'
+        ...,
+        description='Gmail label ID to add. Common: INBOX (unarchives), UNREAD (marks unread), STARRED (stars), IMPORTANT, SPAM, TRASH',
     ),
 ) -> str:
     """
-    Add a label to a message.
+    Add a label to an email message.
+
+    Common operations:
+    - Unarchive: add 'INBOX' label (moves back to inbox)
+    - Mark as unread: add 'UNREAD' label
+    - Star: add 'STARRED' label
+    - Mark important: add 'IMPORTANT' label
+    - Move to spam: add 'SPAM' label
+    - Move to trash: add 'TRASH' label
 
     Args:
         message_id: The Gmail message ID
@@ -582,12 +534,13 @@ def add_label_to_message(
         Confirmation message
     """
     # Add the specified label
-    result = modify_message_labels(
+    modify_message_labels(
         service, user_id=settings.user_id, message_id=message_id, remove_labels=[], add_labels=[label_id]
     )
 
-    # Get message details to show what was modified
-    headers = get_headers_dict(result)
+    # Get full message details to show what was modified
+    full_message = get_message(service, message_id, user_id=settings.user_id)
+    headers = get_headers_dict(full_message)
     subject = headers.get('Subject', 'No Subject')
 
     # Get the label name for the confirmation message
@@ -607,14 +560,22 @@ Added Label: {label_name} ({label_id})
 
 
 @mcp.tool()
-def remove_label_from_message(
+def remove_label(
     message_id: str = Field(..., description='Gmail message ID'),
     label_id: str = Field(
-        ..., description='Gmail label ID to remove (use list_available_labels to find label IDs)'
+        ...,
+        description='Gmail label ID to remove. Common: INBOX (archives message), UNREAD, STARRED (unstars), SPAM, TRASH',
     ),
 ) -> str:
     """
-    Remove a label from a message.
+    Remove a label from an email message.
+
+    Common operations:
+    - Archive: remove 'INBOX' label
+    - Mark as read: remove 'UNREAD' label ← Most common!
+    - Unstar: remove 'STARRED' label
+    - Remove from spam: remove 'SPAM' label
+    - Remove from trash: remove 'TRASH' label
 
     Args:
         message_id: The Gmail message ID
@@ -632,12 +593,13 @@ def remove_label_from_message(
             break
 
     # Remove the specified label
-    result = modify_message_labels(
+    modify_message_labels(
         service, user_id=settings.user_id, message_id=message_id, remove_labels=[label_id], add_labels=[]
     )
 
-    # Get message details to show what was modified
-    headers = get_headers_dict(result)
+    # Get full message details to show what was modified
+    full_message = get_message(service, message_id, user_id=settings.user_id)
+    headers = get_headers_dict(full_message)
     subject = headers.get('Subject', 'No Subject')
 
     return f"""
