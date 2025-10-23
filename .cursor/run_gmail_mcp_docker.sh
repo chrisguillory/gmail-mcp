@@ -15,15 +15,11 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 # Change to the repo root to ensure we're in the right context
 cd "$REPO_ROOT"
 
-# Load direnv environment (this will load .envrc-personal and any other .envrc files)
-# Check if direnv is available, if not try to source .envrc-personal directly
-if command -v direnv &> /dev/null; then
-    eval "$(direnv export bash)"
-else
-    # Fallback: directly source the .envrc-personal file if direnv is not available
-    if [ -f "$REPO_ROOT/.envrc-personal" ]; then
-        source "$REPO_ROOT/.envrc-personal"
-    fi
+# Load environment variables from .env file
+if [ -f "$REPO_ROOT/.env" ]; then
+    set -a  # automatically export all variables
+    source "$REPO_ROOT/.env"
+    set +a
 fi
 
 # Check if Gmail credentials environment variables are available
