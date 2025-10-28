@@ -667,3 +667,89 @@ def get_message_history(
         .list(userId=user_id, startHistoryId=history_id, maxResults=max_results)
         .execute()
     )
+
+
+def list_message_attachments(
+    service: GmailService, message_id: str, user_id: str = DEFAULT_USER_ID
+) -> list[dict[str, Any]]:
+    """
+    List all attachments in a message.
+
+    Args:
+        service: Gmail API service instance
+        message_id: Gmail message ID
+        user_id: Gmail user ID (default: 'me')
+
+    Returns:
+        List of attachment metadata dictionaries with keys:
+        - filename: Original filename
+        - attachment_id: Gmail attachment ID
+        - mime_type: MIME type
+        - size_bytes: Size in bytes
+    """
+    message = get_message(service, message_id, user_id)
+    attachments = []
+
+    def _find_attachments(parts):
+        """Recursively traverse message parts to find attachments."""
+        for part in parts:
+            # Check if this part has a filename (indicates attachment)
+            filename = part.get('filename')
+            if filename and part.get('body', {}).get('attachmentId'):
+                attachments.append(
+                    {
+                        'filename': filename,
+                        'attachment_id': part['body']['attachmentId'],
+                        'mime_type': part.get('mimeType', 'application/octet-stream'),
+                        'size_bytes': part['body'].get('size', 0),
+                    }
+                )
+
+            # Recurse into nested parts
+            if 'parts' in part:
+                _find_attachments(part['parts'])
+
+    # Start traversal from payload
+    payload = message.get('payload', {})
+    if 'parts' in payload:
+        _find_attachments(payload['parts'])
+    elif payload.get('filename') and payload.get('body', {}).get('attachmentId'):
+        # Single-part message with attachment
+        attachments.append(
+            {
+                'filename': payload['filename'],
+                'attachment_id': payload['body']['attachmentId'],
+                'mime_type': payload.get('mimeType', 'application/octet-stream'),
+                'size_bytes': payload['body'].get('size', 0),
+            }
+        )
+
+    return attachments
+
+
+def get_attachment_data(
+    service: GmailService, message_id: str, attachment_id: str, user_id: str = DEFAULT_USER_ID
+) -> bytes:
+    """
+    Download attachment and return raw bytes.
+
+    Args:
+        service: Gmail API service instance
+        message_id: Gmail message ID
+        attachment_id: Gmail attachment ID
+        user_id: Gmail user ID (default: 'me')
+
+    Returns:
+        Raw attachment data as bytes
+    """
+    attachment = (
+        service.users()
+        .messages()
+        .attachments()
+        .get(userId=user_id, messageId=message_id, id=attachment_id)
+        .execute()
+    )
+
+    # Decode base64url-encoded data
+    data = attachment['data']
+    return base64.urlsafe_b64decode(data)

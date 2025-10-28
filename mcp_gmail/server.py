@@ -6,21 +6,26 @@ It exposes Gmail messages as resources and provides tools for composing and send
 """
 
 import re
+import tempfile
 from datetime import datetime
+from email.utils import parsedate_to_datetime
+from pathlib import Path
 from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from mcp_gmail.config import settings
 from mcp_gmail.gmail import (
     create_draft,
+    get_attachment_data,
     get_gmail_service,
     get_headers_dict,
     get_labels,
     get_message,
     get_thread,
+    list_message_attachments,
     list_messages,
     modify_message_labels,
     parse_message_body,
@@ -57,6 +62,32 @@ AVAILABLE_MESSAGE_FIELDS = {
 
 # Default fields for minimal response
 DEFAULT_MESSAGE_FIELDS = {'id', 'subject', 'from', 'date'}
+
+
+# Pydantic models for attachment operations
+class AttachmentInfo(BaseModel):
+    """Metadata for a Gmail attachment."""
+
+    filename: str
+    attachment_id: str
+    mime_type: str
+    size_bytes: int
+
+
+class DownloadedAttachment(BaseModel):
+    """Information about a downloaded attachment saved to temp storage."""
+
+    path: str  # Absolute path to temp file
+    filename: str  # Original filename
+    size_bytes: int
+    mime_type: str
+    message_id: str
+    attachment_id: str
+
+
+# Temporary directory for attachments (auto-cleanup on process exit)
+_temp_dir = tempfile.TemporaryDirectory()
+_attachment_dir = Path(_temp_dir.name)
 
 
 # Helper functions
@@ -105,6 +136,42 @@ def parse_message_fields(fields_param: Optional[str]) -> set:
     return valid_fields if valid_fields else DEFAULT_MESSAGE_FIELDS
 
 
+def format_email_date(date_str: str) -> str:
+    """
+    Parse and format an email date string to local timezone.
+
+    Converts RFC 2822 formatted email dates to the system's local timezone
+    and formats them in a compact, readable format.
+
+    Args:
+        date_str: RFC 2822 formatted date string from email header
+
+    Returns:
+        Formatted date string in format: YYYY-MM-DD HH:MM AM/PM TZ
+        Falls back to original date string if parsing fails.
+
+    Example:
+        "Tue, 28 Oct 2025 16:56:35 +0000" -> "2025-10-28 09:56 AM PDT"
+    """
+    if not date_str or date_str == 'Unknown Date':
+        return 'Unknown Date'
+
+    try:
+        # Parse the RFC 2822 date string
+        dt = parsedate_to_datetime(date_str)
+
+        # Convert to local timezone
+        local_dt = dt.astimezone()
+
+        # Format as: YYYY-MM-DD HH:MM AM/PM TZ
+        formatted = local_dt.strftime('%Y-%m-%d %I:%M %p %Z')
+
+        return formatted
+    except (ValueError, TypeError, AttributeError):
+        # If parsing fails, return the original date string
+        return date_str
+
+
 def format_message_with_fields(message, message_id: str, fields: set) -> str:
     """
     Format a Gmail message with only requested fields.
@@ -141,7 +208,7 @@ def format_message_with_fields(message, message_id: str, fields: set) -> str:
         result_lines.append(f'Subject: {subject}')
 
     if 'date' in fields:
-        date = headers.get('Date', 'Unknown Date')
+        date = format_email_date(headers.get('Date', 'Unknown Date'))
         result_lines.append(f'Date: {date}')
 
     if 'labels' in fields:
@@ -187,7 +254,7 @@ def format_message(message):
     from_header = headers.get('From', 'Unknown')
     to_header = headers.get('To', 'Unknown')
     subject = headers.get('Subject', 'No Subject')
-    date = headers.get('Date', 'Unknown Date')
+    date = format_email_date(headers.get('Date', 'Unknown Date'))
 
     return f"""
 From: {from_header}
@@ -364,7 +431,11 @@ def search_emails(
     max_results: int = Field(10, description='Maximum number of results to return'),
     fields: Optional[str] = Field(
         None,
-        description='Comma-separated list of fields: id, thread_id, subject, from, to, date, body_preview, body, labels, has_attachments, web_url. Default: "id,subject,from,date". Use "all" for all fields.',
+        description=(
+            'Comma-separated list of fields: id, thread_id, subject, from, to, date, '
+            'body_preview, body, labels, has_attachments, web_url. '
+            'Default: "id,subject,from,date". Use "all" for all fields.'
+        ),
     ),
 ) -> str:
     """
@@ -513,7 +584,10 @@ def add_label(
     message_id: str = Field(..., description='Gmail message ID'),
     label_id: str = Field(
         ...,
-        description='Gmail label ID to add. Common: INBOX (unarchives), UNREAD (marks unread), STARRED (stars), IMPORTANT, SPAM, TRASH',
+        description=(
+            'Gmail label ID to add. Common: INBOX (unarchives), UNREAD (marks unread), '
+            'STARRED (stars), IMPORTANT, SPAM, TRASH'
+        ),
     ),
 ) -> str:
     """
@@ -565,7 +639,10 @@ def remove_label(
     message_id: str = Field(..., description='Gmail message ID'),
     label_id: str = Field(
         ...,
-        description='Gmail label ID to remove. Common: INBOX (archives message), UNREAD, STARRED (unstars), SPAM, TRASH',
+        description=(
+            'Gmail label ID to remove. Common: INBOX (archives message), UNREAD, '
+            'STARRED (unstars), SPAM, TRASH'
+        ),
     ),
 ) -> str:
     """
@@ -616,7 +693,11 @@ def get_emails(
     message_ids: list[str] = Field(..., description='List of Gmail message IDs to retrieve'),
     fields: Optional[str] = Field(
         None,
-        description='Comma-separated list of fields: id, thread_id, subject, from, to, date, body_preview, body, labels, has_attachments, web_url. Default: "id,subject,from,date". Use "all" for all fields.',
+        description=(
+            'Comma-separated list of fields: id, thread_id, subject, from, to, date, '
+            'body_preview, body, labels, has_attachments, web_url. '
+            'Default: "id,subject,from,date". Use "all" for all fields.'
+        ),
     ),
 ) -> str:
     """
@@ -667,6 +748,75 @@ def get_emails(
             result += f'Error: {error}\n'
 
     return result
+
+
+@mcp.tool()
+def list_attachments(message_id: str = Field(..., description='Gmail message ID')) -> list[AttachmentInfo]:
+    """
+    List all attachments in an email message.
+
+    Args:
+        message_id: The Gmail message ID
+
+    Returns:
+        List of attachment metadata (filename, attachment_id, mime_type, size_bytes)
+    """
+    attachments_data = list_message_attachments(service, message_id, user_id=settings.user_id)
+
+    return [AttachmentInfo(**att) for att in attachments_data]
+
+
+@mcp.tool()
+def download_attachment(
+    message_id: str = Field(..., description='Gmail message ID'),
+    attachment_id: str = Field(..., description='Gmail attachment ID from list_attachments'),
+    filename: str = Field(..., description='Filename to save as (will be sanitized)'),
+) -> DownloadedAttachment:
+    """
+    Download an email attachment to temporary storage and return the file path.
+
+    Use list_attachments() first to get the attachment_id and original filename.
+    The file is saved to a temporary directory that auto-cleans on process exit.
+    Use the Read tool to view/access the downloaded file.
+
+    Args:
+        message_id: The Gmail message ID
+        attachment_id: The attachment ID from list_attachments()
+        filename: Desired filename (will be sanitized for safety)
+
+    Returns:
+        DownloadedAttachment with path to temp file and metadata
+    """
+    # Download attachment data
+    attachment_data = get_attachment_data(
+        service, message_id=message_id, attachment_id=attachment_id, user_id=settings.user_id
+    )
+
+    # Sanitize filename to prevent path traversal
+    safe_filename = ''.join(c if c.isalnum() or c in '.-_' else '_' for c in filename)
+    if not safe_filename or safe_filename.startswith('.'):
+        safe_filename = 'attachment_' + safe_filename
+
+    # Save to temp directory
+    save_path = _attachment_dir / safe_filename
+    save_path.write_bytes(attachment_data)
+
+    # Get attachment metadata for response
+    attachments = list_message_attachments(service, message_id, user_id=settings.user_id)
+    att_metadata = next((att for att in attachments if att['attachment_id'] == attachment_id), None)
+
+    if not att_metadata:
+        # Fallback if metadata not found
+        att_metadata = {'filename': filename, 'mime_type': 'application/octet-stream'}
+
+    return DownloadedAttachment(
+        path=str(save_path),
+        filename=att_metadata['filename'],
+        size_bytes=len(attachment_data),
+        mime_type=att_metadata['mime_type'],
+        message_id=message_id,
+        attachment_id=attachment_id,
+    )
 
 
 if __name__ == '__main__':

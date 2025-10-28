@@ -17,7 +17,8 @@
       "Read(/Users/chris/slack-mcp-server/pkg/handler/**)",
       "Read(/Users/chris/slack-mcp-server/pkg/**)",
       "Read(/Users/chris/slack-mcp-server/pkg/handler/**)",
-      "mcp__gmail__search_emails"
+      "mcp__gmail__search_emails",
+      "mcp__gmail__get_emails"
     ],
     "deny": [],
     "ask": []
