@@ -1,34 +1,18 @@
-"""
-This module provides utilities for authenticating with and using the Gmail API.
-"""
+"""Utilities for authenticating with and using the Gmail API."""
 
 import base64
 import json
 import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import Resource, build
 
-# Default settings
-DEFAULT_CREDENTIALS_PATH = 'credentials.json'
-DEFAULT_TOKEN_PATH = 'token.json'
-DEFAULT_USER_ID = 'me'
-
-# Gmail API scopes
-GMAIL_SCOPES = [
-    'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.send',
-    'https://www.googleapis.com/auth/gmail.compose',
-    'https://www.googleapis.com/auth/gmail.labels',
-]
-
-# For simpler testing
-GMAIL_MODIFY_SCOPE = ['https://www.googleapis.com/auth/gmail.modify']
+from src.config import DEFAULT_CREDENTIALS_PATH, DEFAULT_TOKEN_PATH, DEFAULT_USER_ID, GMAIL_SCOPES
 
 # Type alias for the Gmail service
 GmailService = Resource
@@ -37,7 +21,7 @@ GmailService = Resource
 def get_gmail_service(
     credentials_path: str = DEFAULT_CREDENTIALS_PATH,
     token_path: str = DEFAULT_TOKEN_PATH,
-    scopes: List[str] = GMAIL_SCOPES,
+    scopes: list[str] = GMAIL_SCOPES,
 ) -> GmailService:
     """
     Authenticate with Gmail API and return the service object.
@@ -87,9 +71,9 @@ def create_message(
     to: str,
     subject: str,
     message_text: str,
-    cc: Optional[str] = None,
-    bcc: Optional[str] = None,
-) -> Dict[str, Any]:
+    cc: str | None = None,
+    bcc: str | None = None,
+) -> dict[str, Any]:
     """
     Create a message for the Gmail API.
 
@@ -125,10 +109,10 @@ def create_multipart_message(
     to: str,
     subject: str,
     text_part: str,
-    html_part: Optional[str] = None,
-    cc: Optional[str] = None,
-    bcc: Optional[str] = None,
-) -> Dict[str, Any]:
+    html_part: str | None = None,
+    cc: str | None = None,
+    bcc: str | None = None,
+) -> dict[str, Any]:
     """
     Create a multipart MIME message (text and HTML).
 
@@ -169,7 +153,7 @@ def create_multipart_message(
     return {'raw': encoded_message}
 
 
-def parse_message_body(message: Dict[str, Any]) -> str:
+def parse_message_body(message: dict[str, Any]) -> str:
     """
     Parse the body of a Gmail message.
 
@@ -202,22 +186,6 @@ def parse_message_body(message: Dict[str, Any]) -> str:
         return ''
 
 
-def get_headers_dict(message: Dict[str, Any]) -> Dict[str, str]:
-    """
-    Extract headers from a Gmail message into a dictionary.
-
-    Args:
-        message: The Gmail message object
-
-    Returns:
-        Dictionary of message headers
-    """
-    headers = {}
-    for header in message['payload']['headers']:
-        headers[header['name']] = header['value']
-    return headers
-
-
 def send_email(
     service: GmailService,
     sender: str,
@@ -225,9 +193,9 @@ def send_email(
     subject: str,
     body: str,
     user_id: str = DEFAULT_USER_ID,
-    cc: Optional[str] = None,
-    bcc: Optional[str] = None,
-) -> Dict[str, Any]:
+    cc: str | None = None,
+    bcc: str | None = None,
+) -> dict[str, Any]:
     """
     Compose and send an email.
 
@@ -248,7 +216,7 @@ def send_email(
     return service.users().messages().send(userId=user_id, body=message).execute()
 
 
-def get_labels(service: GmailService, user_id: str = DEFAULT_USER_ID) -> List[Dict[str, Any]]:
+def get_labels(service: GmailService, user_id: str = DEFAULT_USER_ID) -> list[dict[str, Any]]:
     """
     Get all labels for the specified user.
 
@@ -267,8 +235,8 @@ def list_messages(
     service: GmailService,
     user_id: str = DEFAULT_USER_ID,
     max_results: int = 10,
-    query: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    query: str | None = None,
+) -> list[dict[str, Any]]:
     """
     List messages in the user's mailbox.
 
@@ -292,18 +260,18 @@ def search_messages(
     service: GmailService,
     user_id: str = DEFAULT_USER_ID,
     max_results: int = 10,
-    read_status: Optional[str] = None,
-    labels: Optional[List[str]] = None,
-    from_email: Optional[str] = None,
-    to_email: Optional[str] = None,
-    subject: Optional[str] = None,
-    after: Optional[str] = None,
-    before: Optional[str] = None,
-    has_attachment: Optional[bool] = None,
-    is_starred: Optional[bool] = None,
-    is_important: Optional[bool] = None,
-    in_trash: Optional[bool] = None,
-) -> List[Dict[str, Any]]:
+    read_status: str | None = None,
+    labels: list[str] | None = None,
+    from_email: str | None = None,
+    to_email: str | None = None,
+    subject: str | None = None,
+    after: str | None = None,
+    before: str | None = None,
+    has_attachment: bool | None = None,
+    is_starred: bool | None = None,
+    is_important: bool | None = None,
+    in_trash: bool | None = None,
+) -> list[dict[str, Any]]:
     """
     Search for messages in the user's mailbox using various criteria.
 
@@ -377,7 +345,7 @@ def search_messages(
     return list_messages(service, user_id, max_results, query)
 
 
-def get_message(service: GmailService, message_id: str, user_id: str = DEFAULT_USER_ID) -> Dict[str, Any]:
+def get_message(service: GmailService, message_id: str, user_id: str = DEFAULT_USER_ID) -> dict[str, Any]:
     """
     Get a specific message by ID.
 
@@ -393,7 +361,7 @@ def get_message(service: GmailService, message_id: str, user_id: str = DEFAULT_U
     return message
 
 
-def get_thread(service: GmailService, thread_id: str, user_id: str = DEFAULT_USER_ID) -> Dict[str, Any]:
+def get_thread(service: GmailService, thread_id: str, user_id: str = DEFAULT_USER_ID) -> dict[str, Any]:
     """
     Get a specific thread by ID.
 
@@ -416,9 +384,9 @@ def create_draft(
     subject: str,
     body: str,
     user_id: str = DEFAULT_USER_ID,
-    cc: Optional[str] = None,
-    bcc: Optional[str] = None,
-) -> Dict[str, Any]:
+    cc: str | None = None,
+    bcc: str | None = None,
+) -> dict[str, Any]:
     """
     Create a draft email.
 
@@ -442,7 +410,7 @@ def create_draft(
 
 def list_drafts(
     service: GmailService, user_id: str = DEFAULT_USER_ID, max_results: int = 10
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     List draft emails in the user's mailbox.
 
@@ -459,7 +427,7 @@ def list_drafts(
     return drafts
 
 
-def get_draft(service: GmailService, draft_id: str, user_id: str = DEFAULT_USER_ID) -> Dict[str, Any]:
+def get_draft(service: GmailService, draft_id: str, user_id: str = DEFAULT_USER_ID) -> dict[str, Any]:
     """
     Get a specific draft by ID.
 
@@ -475,7 +443,7 @@ def get_draft(service: GmailService, draft_id: str, user_id: str = DEFAULT_USER_
     return draft
 
 
-def send_draft(service: GmailService, draft_id: str, user_id: str = DEFAULT_USER_ID) -> Dict[str, Any]:
+def send_draft(service: GmailService, draft_id: str, user_id: str = DEFAULT_USER_ID) -> dict[str, Any]:
     """
     Send an existing draft email.
 
@@ -493,7 +461,7 @@ def send_draft(service: GmailService, draft_id: str, user_id: str = DEFAULT_USER
 
 def create_label(
     service: GmailService, name: str, user_id: str = DEFAULT_USER_ID, label_type: str = 'user'
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Create a new label.
 
@@ -518,11 +486,11 @@ def create_label(
 def update_label(
     service: GmailService,
     label_id: str,
-    name: Optional[str] = None,
-    label_list_visibility: Optional[str] = None,
-    message_list_visibility: Optional[str] = None,
+    name: str | None = None,
+    label_list_visibility: str | None = None,
+    message_list_visibility: str | None = None,
     user_id: str = DEFAULT_USER_ID,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Update an existing label.
 
@@ -569,10 +537,10 @@ def delete_label(service: GmailService, label_id: str, user_id: str = DEFAULT_US
 def modify_message_labels(
     service: GmailService,
     message_id: str,
-    add_labels: Optional[List[str]] = None,
-    remove_labels: Optional[List[str]] = None,
+    add_labels: list[str] | None = None,
+    remove_labels: list[str] | None = None,
     user_id: str = DEFAULT_USER_ID,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Modify the labels on a message.
 
@@ -592,9 +560,9 @@ def modify_message_labels(
 
 def batch_modify_messages_labels(
     service: GmailService,
-    message_ids: List[str],
-    add_labels: Optional[List[str]] = None,
-    remove_labels: Optional[List[str]] = None,
+    message_ids: list[str],
+    add_labels: list[str] | None = None,
+    remove_labels: list[str] | None = None,
     user_id: str = DEFAULT_USER_ID,
 ) -> None:
     """
@@ -614,7 +582,7 @@ def batch_modify_messages_labels(
     service.users().messages().batchModify(userId=user_id, body=body).execute()
 
 
-def trash_message(service: GmailService, message_id: str, user_id: str = DEFAULT_USER_ID) -> Dict[str, Any]:
+def trash_message(service: GmailService, message_id: str, user_id: str = DEFAULT_USER_ID) -> dict[str, Any]:
     """
     Move a message to trash.
 
@@ -631,7 +599,7 @@ def trash_message(service: GmailService, message_id: str, user_id: str = DEFAULT
 
 def untrash_message(
     service: GmailService, message_id: str, user_id: str = DEFAULT_USER_ID
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Remove a message from trash.
 
@@ -648,7 +616,7 @@ def untrash_message(
 
 def get_message_history(
     service: GmailService, history_id: str, user_id: str = DEFAULT_USER_ID, max_results: int = 100
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Get history of changes to the mailbox.
 

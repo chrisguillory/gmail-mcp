@@ -7,23 +7,23 @@ name = "mcp-gmail"
 version = "0.1.0"
 description = "Model Context Protocol server for Gmail integration"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [{ name = "Jeremy Jordan", email = "no-reply@example.com" }]
 dependencies = [
-    "mcp[cli]>=0.6.0",
     "google-auth>=2.27.0",
     "google-auth-oauthlib>=1.1.0",
     "google-api-python-client>=2.116.0",
     "pydantic>=2.0.0",
+    "fastmcp[cli]>=2.12.5",
 ]
 
-[tool.uv]
-dev-dependencies = ["pytest>=7.0.0", "ruff>=0.1.0", "pre-commit>=3.5.0"]
+[dependency-groups]
+dev = ["pytest>=7.0.0", "ruff>=0.1.0", "pre-commit>=3.5.0"]
 
 [tool.black]
 line-length = 108
-target-version = ["py310"]
+target-version = ["py311"]
 
 [tool.isort]
 profile = "black"
@@ -31,10 +31,11 @@ line_length = 108
 
 [tool.ruff]
 line-length = 108
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.format]
 quote-style = "single"
 
 [tool.ruff.lint]
 select = ["E", "F", "B", "I"]
+ignore = ["B008"]  # Allow Field() in default arguments (FastMCP pattern)

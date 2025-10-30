@@ -5,7 +5,7 @@ Tests for the configuration module.
 import json
 from unittest.mock import patch
 
-from mcp_gmail.config import Settings, get_settings
+from src.config import Settings, get_settings
 
 
 def test_settings_from_file(tmp_path):

@@ -1,32 +1,37 @@
-"""
-Configuration settings for the MCP Gmail server.
-"""
+"""Configuration settings for the Gmail MCP server."""
 
 import json
 import os
-from typing import List, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Import default settings from gmail module
-from mcp_gmail.gmail import (
-    DEFAULT_CREDENTIALS_PATH,
-    DEFAULT_TOKEN_PATH,
-    DEFAULT_USER_ID,
-    GMAIL_SCOPES,
-)
+# Default settings
+DEFAULT_CREDENTIALS_PATH = 'credentials.json'
+DEFAULT_TOKEN_PATH = 'token.json'
+DEFAULT_USER_ID = 'me'
+
+# Gmail API scopes
+GMAIL_SCOPES = [
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/gmail.compose',
+    'https://www.googleapis.com/auth/gmail.labels',
+]
+
+# For simpler testing
+GMAIL_MODIFY_SCOPE = ['https://www.googleapis.com/auth/gmail.modify']
 
 
 class Settings(BaseSettings):
     """
-    Settings model for MCP Gmail server configuration.
+    Settings model for Gmail MCP server configuration.
 
     Automatically reads from environment variables with MCP_GMAIL_ prefix.
     """
 
     credentials_path: str = DEFAULT_CREDENTIALS_PATH
     token_path: str = DEFAULT_TOKEN_PATH
-    scopes: List[str] = GMAIL_SCOPES
+    scopes: list[str] = GMAIL_SCOPES
     user_id: str = DEFAULT_USER_ID
     max_results: int = 10
 
@@ -40,10 +45,9 @@ class Settings(BaseSettings):
     )
 
 
-def get_settings(config_file: Optional[str] = None) -> Settings:
+def get_settings(config_file: str | None = None) -> Settings:
     """
     Get settings instance, optionally loaded from a config file.
-    Uses LRU cache for performance.
 
     Args:
         config_file: Path to a JSON configuration file (optional)
@@ -59,8 +63,9 @@ def get_settings(config_file: Optional[str] = None) -> Settings:
         with open(config_file, 'r') as f:
             file_config = json.load(f)
             settings = Settings.model_validate(file_config)
+            return settings
 
-    return settings
+    return Settings()
 
 
 # Create a default settings instance

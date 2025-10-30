@@ -24,4 +24,4 @@ if command -v direnv &> /dev/null; then
 fi
 
 # Run the MCP server with uv
-exec uv run python -m mcp_gmail.server
+exec uv run python src/server.py

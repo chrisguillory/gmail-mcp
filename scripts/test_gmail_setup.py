@@ -4,7 +4,7 @@ Simple script to test Gmail API connectivity.
 Run with: uv run python scripts/test_gmail_setup.py
 """
 
-from mcp_gmail import gmail
+from src import gmail
 
 
 def test_gmail_connection():

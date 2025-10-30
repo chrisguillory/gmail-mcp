@@ -9,7 +9,7 @@ from typing import Generator
 
 import pytest
 
-from mcp_gmail.config import Settings, get_settings
+from src.config import Settings, get_settings
 
 
 @pytest.fixture
